@@ -1,15 +1,12 @@
 import fs from "fs";
 import path from "path";
 
-export function createWorkspace(
-  deploymentId: string
-) {
-  const workspacePath = path.join(
-    "/var/deployer/workspaces",
-    deploymentId
-  );
+export function createWorkspace(deploymentId: string) {
+  const workspaceRoot = "/var/deployer/workspaces";
 
-  fs.mkdirSync(workspacePath, {
+  const workspacePath = path.join(workspaceRoot, deploymentId);
+
+  fs.mkdirSync(workspaceRoot, {
     recursive: true,
   });
 

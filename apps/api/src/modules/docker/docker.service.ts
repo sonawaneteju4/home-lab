@@ -77,15 +77,28 @@ export class DockerService {
       t: imageTag,
       dockerfile: dockerfilePath,
     });
-    await new Promise((resolve, reject) => {
+
+    const result = await new Promise<any[]>((resolve, reject) => {
       this.docker.modem.followProgress(stream, (err, result) => {
         if (err) {
           reject(err);
         } else {
-          resolve(result);
+          resolve(result ?? []);
         }
       });
     });
+
+    const buildError = result.find(
+      (event) => event?.error || event?.errorDetail?.message,
+    );
+
+    if (buildError) {
+      throw new Error(
+        buildError.error ||
+          buildError.errorDetail?.message ||
+          "Docker build failed",
+      );
+    }
 
     return {
       imageTag,
