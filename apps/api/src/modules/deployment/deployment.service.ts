@@ -15,16 +15,11 @@ export class DeploymentService {
   }
 
   private getRepoName(repoUrl: string) {
-    const trimmed = repoUrl.endsWith(".git")
-      ? repoUrl.slice(0, -4)
-      : repoUrl;
+    const trimmed = repoUrl.endsWith(".git") ? repoUrl.slice(0, -4) : repoUrl;
     return trimmed.split("/").pop() ?? "";
   }
 
-  private resolveDockerfilePath(
-    repoUrl: string,
-    dockerfilePath: string,
-  ) {
+  private resolveDockerfilePath(repoUrl: string, dockerfilePath: string) {
     const repoName = this.getRepoName(repoUrl);
 
     let candidate = dockerfilePath
@@ -65,7 +60,9 @@ export class DeploymentService {
     const fullDockerfilePath = path.join(workspacePath, resolvedDockerfilePath);
 
     if (!fs.existsSync(fullDockerfilePath)) {
-      throw new Error(`Cannot locate Dockerfile in workspace: ${resolvedDockerfilePath}`);
+      throw new Error(
+        `Cannot locate Dockerfile in workspace: ${resolvedDockerfilePath}`,
+      );
     }
 
     const imageTag = `deployment:${Date.now()}`;
