@@ -88,15 +88,38 @@ export class DockerService {
       });
     });
 
+    const buildLogs = result
+      .flatMap((event) => {
+        if (typeof event?.stream === "string") {
+          return event.stream
+            .split("\n")
+            .map((line: string) => line.trim())
+            .filter((line: string) => line.length > 0);
+        }
+
+        if (typeof event?.status === "string") {
+          return [event.status.trim()];
+        }
+
+        return [];
+      })
+      .filter((line) => line.length > 0);
+
     const buildError = result.find(
       (event) => event?.error || event?.errorDetail?.message,
     );
 
     if (buildError) {
-      throw new Error(
+      const logTail = buildLogs.slice(-30).join("\n");
+      const baseMessage =
         buildError.error ||
-          buildError.errorDetail?.message ||
-          "Docker build failed",
+        buildError.errorDetail?.message ||
+        "Docker build failed";
+
+      throw new Error(
+        logTail
+          ? `${baseMessage}\nDocker build log tail:\n${logTail}`
+          : baseMessage,
       );
     }
 
