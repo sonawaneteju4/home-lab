@@ -12,30 +12,22 @@ export class DeploymentService {
     this.gitService = new GitService();
   }
 
-  async deployRepository(repoUrl: string) {
-    const deploymentId =
-      `deployment-${Date.now()}`;
+  async deployRepository(repoUrl: string, dockerfilePath: string) {
+    const deploymentId = `deployment-${Date.now()}`;
 
-    const workspacePath =
-      createWorkspace(deploymentId);
+    const workspacePath = createWorkspace(deploymentId);
 
-    await this.gitService.cloneRepository(
-      repoUrl,
-      workspacePath
-    );
+    await this.gitService.cloneRepository(repoUrl, workspacePath);
 
-    const imageTag =
-      `deployment:${Date.now()}`;
+    const imageTag = `deployment:${Date.now()}`;
 
     await this.dockerService.buildImageFromPath(
       workspacePath,
-      imageTag
+      imageTag,
+      dockerfilePath,
     );
 
-    const runtime =
-      await this.dockerService.runContainerFromImage(
-        imageTag
-      );
+    const runtime = await this.dockerService.runContainerFromImage(imageTag);
 
     return {
       deploymentId,

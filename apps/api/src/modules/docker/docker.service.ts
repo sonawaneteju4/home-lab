@@ -10,134 +10,120 @@ export class DockerService {
     });
   }
 
-// List Of Containers
+  // List Of Containers
   async listContainers() {
     return this.docker.listContainers({
       all: true,
     });
   }
 
-
-// Hello World Container
+  // Hello World Container
   async runHelloWorld() {
-  const container = await this.docker.createContainer({
-    Image: "hello-world",
-    name: `test-${Date.now()}`,
-  });
-  
+    const container = await this.docker.createContainer({
+      Image: "hello-world",
+      name: `test-${Date.now()}`,
+    });
 
-  await container.start();
+    await container.start();
 
-  
+    return {
+      id: container.id,
+    };
+  }
 
-  return {
-    id: container.id,
-  };
-}
+  // Nginx Contianer
+  async runNginxContainer() {
+    const container = await this.docker.createContainer({
+      Image: "nginx:alpine",
 
+      name: `nginx-${Date.now()}`,
 
-// Nginx Contianer
-async runNginxContainer() {
-  const container = await this.docker.createContainer({
-    Image: "nginx:alpine",
-
-    name: `nginx-${Date.now()}`,
-
-    ExposedPorts: {
-      "80/tcp": {},
-    },
-
-    HostConfig: {
-      PortBindings: {
-        "80/tcp": [
-          {
-            HostPort: "",
-          },
-        ],
+      ExposedPorts: {
+        "80/tcp": {},
       },
-    },
-  });
 
-  await container.start();
+      HostConfig: {
+        PortBindings: {
+          "80/tcp": [
+            {
+              HostPort: "",
+            },
+          ],
+        },
+      },
+    });
 
-  const inspect = await container.inspect();
+    await container.start();
 
-  const assignedPort =
-    inspect.NetworkSettings.Ports["80/tcp"][0].HostPort;
+    const inspect = await container.inspect();
 
-  return {
-    id: container.id,
-    port: assignedPort,
-  };
-}
+    const assignedPort = inspect.NetworkSettings.Ports["80/tcp"][0].HostPort;
 
+    return {
+      id: container.id,
+      port: assignedPort,
+    };
+  }
 
-//Build Image
-async buildImageFromPath( workspacePath: string,
-    imageTag: string){
-    
-        const tarStream = tar.pack(workspacePath)
+  //Build Image
+  async buildImageFromPath(
+    workspacePath: string,
+    imageTag: string,
+    dockerfilePath: string,
+  ) {
+    const tarStream = tar.pack(workspacePath);
 
-    const stream = await this.docker.buildImage(
-        tarStream,{
-            t: imageTag
-        }
-    );
+    const stream = await this.docker.buildImage(tarStream, {
+      t: imageTag,
+      dockerfile: dockerfilePath,
+    });
     await new Promise((resolve, reject) => {
-      this.docker.modem.followProgress(
-        stream,
-        (err, result) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(result);
-          }
+      this.docker.modem.followProgress(stream, (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
         }
-      );
+      });
     });
 
     return {
       imageTag,
     };
-}
+  }
 
+  // Run Container TCP
 
-// Run Container TCP
+  async runContainerFromImage(image: string) {
+    const container = await this.docker.createContainer({
+      Image: image,
 
-async runContainerFromImage(image: string) {
-  const container = await this.docker.createContainer({
-    Image: image,
+      name: `runtime-${Date.now()}`,
 
-    name: `runtime-${Date.now()}`,
-
-    ExposedPorts: {
-      "3000/tcp": {},
-    },
-
-    HostConfig: {
-      PortBindings: {
-        "3000/tcp": [
-          {
-            HostPort: "",
-          },
-        ],
+      ExposedPorts: {
+        "3000/tcp": {},
       },
-    },
-  });
 
-  await container.start();
+      HostConfig: {
+        PortBindings: {
+          "3000/tcp": [
+            {
+              HostPort: "",
+            },
+          ],
+        },
+      },
+    });
 
-  const inspect = await container.inspect();
+    await container.start();
 
-  const assignedPort =
-    inspect.NetworkSettings.Ports["3000/tcp"][0]
-      .HostPort;
+    const inspect = await container.inspect();
 
-  return {
-    id: container.id,
-    port: assignedPort,
-  };
+    const assignedPort = inspect.NetworkSettings.Ports["3000/tcp"][0].HostPort;
+
+    return {
+      id: container.id,
+      port: assignedPort,
+    };
+  }
 }
-
-}
-
