@@ -100,6 +100,14 @@ export class DockerService {
       );
     }
 
+    try {
+      await this.docker.getImage(imageTag).inspect();
+    } catch (error) {
+      throw new Error(
+        `Docker build finished but image tag was not created: ${imageTag}`,
+      );
+    }
+
     return {
       imageTag,
     };
